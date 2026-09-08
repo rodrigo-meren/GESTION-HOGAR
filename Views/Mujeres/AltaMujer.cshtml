@@ -115,6 +115,15 @@
             <input type="text" class="form-control" id="ObservacionesCondicion" name="ObservacionesCondicion" placeholder="Ej: Requiere medicación, tratamiento en curso...">
         </div>
     </div>
+    <h5 class="mt-4 mb-3 border-bottom pb-2 text-primary"><i class="bi bi-calendar-check"></i> Datos del Ingreso</h5>
+
+    <div class="row bg-light p-3 rounded border mx-0">
+        <div class="col-md-6 mb-3">
+            <label for="FechaIngresoReal" class="form-label fw-bold">Fecha Real del Ingreso <span class="text-danger">*</span></label>
+            <input type="date" class="form-control border-primary" id="FechaIngresoReal" name="FechaIngresoReal" value="@DateTime.Now.ToString("yyyy-MM-dd")" required>
+            <small class="form-text text-muted">Por defecto es hoy. Modifíquela si el ingreso ocurrió en días anteriores.</small>
+        </div>
+    </div>
 
     <div class="mt-4">
         <button type="submit" class="btn btn-success">

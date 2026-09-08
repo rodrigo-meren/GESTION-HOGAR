@@ -92,7 +92,7 @@ namespace TPI_GESTION_HOGAR.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AltaMujer(Mujer nuevaMujer, string Provincia, int? TipoCondicionId, string? ObservacionesCondicion)
+        public async Task<IActionResult> AltaMujer(Mujer nuevaMujer, string Provincia, int? TipoCondicionId, string? ObservacionesCondicion ,DateOnly FechaIngresoReal)
         {
             if (ModelState.IsValid)
             {
@@ -129,7 +129,7 @@ namespace TPI_GESTION_HOGAR.Controllers
                 }
                 var primerIngreso = new Registro
                 {
-                    Fecha = DateOnly.FromDateTime(DateTime.Today), 
+                    Fecha = FechaIngresoReal, 
                     Estado = true,                                 
                     MujerID = nuevaMujer.ID                        
                                                                    
@@ -277,7 +277,7 @@ namespace TPI_GESTION_HOGAR.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Editar(int id, Mujer mujerModificada, bool generarIngreso = false)
+        public async Task<IActionResult> Editar(int id, Mujer mujerModificada, bool generarIngreso = false, DateOnly? FechaIngresoReal = null)
         {
             if (id != mujerModificada.ID)
             {
@@ -297,7 +297,7 @@ namespace TPI_GESTION_HOGAR.Controllers
                     {
                         var nuevoIngreso = new Registro
                         {
-                            Fecha = DateOnly.FromDateTime(DateTime.Today), 
+                            Fecha = FechaIngresoReal ?? DateOnly.FromDateTime(DateTime.Today),
                             Estado = true,                                 
                             MujerID = mujerModificada.ID 
                                                                                                        

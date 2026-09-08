@@ -18,8 +18,9 @@
                         <input type="hidden" asp-for="RegistroId" value="@ViewBag.RegistroId" />
 
                         <div class="p-3 bg-light rounded border mb-4">
-                            <label class="form-label fw-bold text-dark mb-1">Fecha de Salida</label>
-                            <input asp-for="Fecha" type="date" class="form-control" max="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                            <label class="form-label fw-bold text-dark mb-1">Fecha Real de Egreso</label>
+                            <input asp-for="Fecha" type="date" class="form-control" max="@DateTime.Now.ToString("yyyy-MM-dd")" value="@Model.Fecha.ToString("yyyy-MM-dd")" required />
+                            <small class="form-text text-muted">Si se retiró anoche u otro día, modifique la fecha aquí.</small>
                         </div>
 
                         <div class="p-3 mb-4 rounded border border-warning" style="background-color: #fff3cd;">

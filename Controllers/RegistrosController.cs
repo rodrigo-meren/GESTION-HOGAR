@@ -96,7 +96,7 @@ namespace TPI_GESTION_HOGAR.Controllers
                                 // 5. FECHA DE INGRESO (Extracción segura)
                                 DateTime fechaIngresoDt = DateTime.Today; // Por defecto hoy
                                 var celdaFecha = row.Cell(1);
-
+                                    
                                 if (celdaFecha.DataType == XLDataType.DateTime)
                                 {
                                     fechaIngresoDt = celdaFecha.GetDateTime();

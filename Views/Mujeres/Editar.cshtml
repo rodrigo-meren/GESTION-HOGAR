@@ -123,6 +123,17 @@
                     <span asp-validation-for="Ocupacion" class="text-danger"></span>
                 </div>
             </div>
+            @if (Model.Estado == false)
+            {
+                <h5 class="mb-3 mt-4 border-bottom pb-2 text-success"><i class="bi bi-calendar-check"></i> Configurar Nuevo Ingreso</h5>
+                <div class="row bg-light p-3 rounded border border-success mx-0 mb-3">
+                    <div class="col-md-6">
+                        <label for="FechaIngresoReal" class="form-label fw-bold text-success">Fecha Real del Ingreso <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control border-success" id="FechaIngresoReal" name="FechaIngresoReal" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                        <small class="form-text text-muted">Sólo se utilizará si presiona "Guardar y Generar Nuevo Ingreso".</small>
+                    </div>
+                </div>
+            }
 
             <div class="d-flex justify-content-end gap-3 mt-4 border-top pt-3">
                 <button type="submit" class="btn btn-outline-secondary fw-bold shadow-sm">
