@@ -2,7 +2,7 @@ name: Deploy to SmarterASP.NET
 
 on:
   push:
-    branches: [ "main" ] # O "master", según cómo se llame tu rama principal
+    branches: [ "main" ] # O "master" según tu rama principal
 
 jobs:
   build-and-deploy:
@@ -12,10 +12,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup .NET Core
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0' # O la versión de .NET que estés usando (ej. 6.0, 7.0, 8.0)
+        dotnet-version: '8.0' # O la versión que uses
 
     - name: Publish application
       run: dotnet publish -c Release -o ./publish
@@ -28,3 +28,4 @@ jobs:
         password: ${{ secrets.FTP_PASSWORD }}
         local-dir: ./publish/
         server-dir: /site/wwwroot/
+        dangerous-clean-slate: true
