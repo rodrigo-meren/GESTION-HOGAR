@@ -8,6 +8,7 @@ using System.Security.Claims;
 using TPI_GESTION_HOGAR.Datos;
 using TPI_GESTION_HOGAR.Models;
 using TPI_GESTION_HOGAR.Services;
+using TPI_GESTION_HOGAR.ViewModel.Auth;
 
 namespace TPI_GESTION_HOGAR.Controllers
 {
@@ -92,9 +93,52 @@ namespace TPI_GESTION_HOGAR.Controllers
             return View();
         }
 
+        [HttpGet]
         public IActionResult ResetPassword(string token)
         {
-            return View();
+            if (string.IsNullOrEmpty(token))
+            {
+                ViewBag.Message = "El token de recuperación no es válido.";
+                ViewBag.IsError = true;
+                return RedirectToAction("Login", "Auth");
+            }
+
+            // Le pasamos el token a la vista para que lo guarde en un campo oculto
+            var model = new ResetPasswordViewModel { Token = token };
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            // Buscamos al usuario que tenga ese token exacto Y que no esté vencido
+            var user = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.ResetToken == model.Token && u.ResetTokenExpiry > DateTime.Now);
+
+            if (user == null)
+            {
+                ViewBag.Message = "El enlace de recuperación es inválido o ha expirado. Por favor, solicita uno nuevo.";
+                ViewBag.IsError = true;
+                return View(model);
+            }
+
+            // Encriptamos la nueva contraseña y la guardamos en la propiedad Clave
+            user.Clave = _hasher.HashPassword(user, model.Password);
+
+            // Invalidamos el token para que no se pueda volver a usar
+            user.ResetToken = null;
+            user.ResetTokenExpiry = null;
+
+            await _context.SaveChangesAsync();
+
+            TempData["MensajeExito"] = "Tu contraseña ha sido restablecida con éxito. Ya puedes iniciar sesión.";
+            return RedirectToAction("Login", "Auth");
         }
 
         [HttpPost]
