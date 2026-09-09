@@ -16,6 +16,22 @@
     <div class="text-muted fw-bold">
         <i class="bi bi-calendar3"></i> @DateTime.Now.ToString("dd/MM/yyyy")
     </div>
+   @* <div class="col-md-6 mb-3">
+        <div class="card shadow-sm border-success">
+            <div class="card-header bg-success text-white fw-bold">
+                <i class="bi bi-file-earmark-excel"></i> Importar Historial (Formato Básico - 5 Columnas)
+            </div>
+            <div class="card-body">
+                <form asp-controller="Registros" asp-action="ImportarHistorialBasico" method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <input type="file" class="form-control" name="archivoExcel" accept=".xlsx" required>
+                    </div>
+                    <button class="btn btn-outline-success w-100" type="submit">Procesar Excel Básico</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    *@
 </div>
 
 <div class="row mb-4 gy-3">

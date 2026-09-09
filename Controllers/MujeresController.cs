@@ -15,9 +15,10 @@ namespace TPI_GESTION_HOGAR.Controllers
         }
         [HttpGet]
         
-        public async Task<IActionResult> Index(string buscarTexto, string estadoFiltro = "todas")
+        public async Task<IActionResult> Index(string buscarTexto, string estadoFiltro = "todas", int pageNumber = 1)
         {
-            
+            int pageSize = 10;
+
             ViewData["FiltroTexto"] = buscarTexto;
             ViewData["EstadoFiltro"] = estadoFiltro;
 
@@ -39,10 +40,20 @@ namespace TPI_GESTION_HOGAR.Controllers
                                          m.Apellido.Contains(buscarTexto) ||
                                          m.DNI.ToString().Contains(buscarTexto));
             }
+            int totalRecords = await query.CountAsync();
+            int totalPages = (int)Math.Ceiling(totalRecords / (double)pageSize);
 
-          
-            var mujeresFiltradas = await query.OrderBy(m => m.Apellido).ToListAsync();
-            return View(mujeresFiltradas);
+            var mujeresPaginadas = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+            ViewBag.CurrentPage = pageNumber;
+            ViewBag.TotalPages = totalPages;
+
+            ViewData["FiltroTexto"] = buscarTexto;
+            ViewData["EstadoFiltro"] = estadoFiltro;
+
+            return View(mujeresPaginadas);
         }
 
         [HttpGet]

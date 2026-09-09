@@ -19,6 +19,188 @@ namespace TPI_GESTION_HOGAR.Controllers
         {
             _context = context;
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ImportarHistorialBasico(IFormFile archivoExcel)
+        {
+            if (archivoExcel == null || archivoExcel.Length == 0)
+            {
+                TempData["MensajeError"] = "Por favor, seleccione un archivo Excel válido.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            using (var stream = new MemoryStream())
+            {
+                await archivoExcel.CopyToAsync(stream);
+                using (var workbook = new XLWorkbook(stream))
+                {
+                    var worksheet = workbook.Worksheet(1);
+                    var rows = worksheet.RangeUsed().RowsUsed().Skip(1);
+
+                    int casosImportados = 0;
+                    int casosFallidos = 0;
+
+                    using (var transaction = await _context.Database.BeginTransactionAsync())
+                    {
+                        try
+                        {
+                            foreach (var row in rows)
+                            {
+                                // Envolvemos TODA la lectura de la fila en un try-catch.
+                                // Si algo explota (como el OleAut date), saltamos a la siguiente fila sin abortar.
+                                try
+                                {
+                                    // 1. DNI
+                                    string dniStr = row.Cell(4).CachedValue.ToString().Replace(".", "").Trim();
+                                    if (string.IsNullOrEmpty(dniStr)) dniStr = row.Cell(4).GetString().Replace(".", "").Trim();
+
+                                    if (!int.TryParse(dniStr, out int dniLimpio)) continue;
+
+                                    var mujerExistente = await _context.Mujeres.FirstOrDefaultAsync(m => m.DNI == dniLimpio);
+                                    int mujerId;
+
+                                    if (mujerExistente == null)
+                                    {
+                                        // 2. NOMBRE Y APELLIDO
+                                        string nombreCompleto = "";
+                                        try { nombreCompleto = row.Cell(2).GetString().Trim(); } catch { }
+
+                                        string nombre = "Sin Nombre";
+                                        string apellido = "Desconocido";
+
+                                        if (!string.IsNullOrEmpty(nombreCompleto))
+                                        {
+                                            if (nombreCompleto.Contains(","))
+                                            {
+                                                var partes = nombreCompleto.Split(',');
+                                                apellido = partes[0].Trim();
+                                                nombre = partes.Length > 1 ? partes[1].Trim() : "";
+                                            }
+                                            else
+                                            {
+                                                var partes = nombreCompleto.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                                                apellido = partes.Length > 0 ? partes[0] : "";
+                                                nombre = partes.Length > 1 ? string.Join(" ", partes.Skip(1)) : "";
+                                            }
+                                        }
+
+                                        // 3. CIUDAD
+                                        string ciudad = "";
+                                        try { ciudad = row.Cell(3).GetString().Trim(); } catch { }
+                                        if (string.IsNullOrEmpty(ciudad)) ciudad = "No especificada";
+
+                                        var nuevaMujer = new Mujer
+                                        {
+                                            DNI = dniLimpio,
+                                            Apellido = apellido,
+                                            Nombre = nombre,
+                                            Localidad = ciudad,
+                                            Nacionalidad = "Argentina",
+                                            FechaNac = new DateOnly(1990, 1, 1),
+                                            Estado = false
+                                        };
+
+                                        _context.Mujeres.Add(nuevaMujer);
+                                        await _context.SaveChangesAsync();
+                                        mujerId = nuevaMujer.ID;
+                                    }
+                                    else
+                                    {
+                                        mujerId = mujerExistente.ID;
+                                    }
+
+                                    // 4. FECHA DE INGRESO
+                                    DateTime fechaIngresoDt = DateTime.Today;
+                                    try
+                                    {
+                                        var celdaIngreso = row.Cell(1);
+                                        if (celdaIngreso.DataType == XLDataType.DateTime)
+                                        {
+                                            fechaIngresoDt = celdaIngreso.GetDateTime();
+                                        }
+                                        else if (DateTime.TryParse(celdaIngreso.GetString(), out DateTime fechaParseada))
+                                        {
+                                            fechaIngresoDt = fechaParseada;
+                                        }
+                                    }
+                                    catch { /* Falla silenciosa, queda DateTime.Today */ }
+
+                                    // CREAR REGISTRO DE INGRESO
+                                    var nuevoRegistro = new Registro
+                                    {
+                                        Fecha = DateOnly.FromDateTime(fechaIngresoDt),
+                                        Estado = false,
+                                        MujerID = mujerId,
+                                        HabitacionId = null
+                                    };
+
+                                    _context.Registros.Add(nuevoRegistro);
+                                    await _context.SaveChangesAsync();
+
+                                    // 5. FECHA DE EGRESO
+                                    string celdaEgresoStr = "";
+                                    try { celdaEgresoStr = row.Cell(5).GetString().Trim(); } catch { }
+
+                                    if (!string.IsNullOrEmpty(celdaEgresoStr) && celdaEgresoStr.ToLower() != "en curso")
+                                    {
+                                        DateTime fechaEgresoDt = DateTime.Today;
+                                        try
+                                        {
+                                            var celdaEgreso = row.Cell(5);
+                                            if (celdaEgreso.DataType == XLDataType.DateTime)
+                                            {
+                                                fechaEgresoDt = celdaEgreso.GetDateTime();
+                                            }
+                                            else if (DateTime.TryParse(celdaEgreso.GetString(), out DateTime fechaParseadaEgreso))
+                                            {
+                                                fechaEgresoDt = fechaParseadaEgreso;
+                                            }
+                                        }
+                                        catch { /* Ignora y usa fecha de hoy */ }
+
+                                        // CREAR EGRESO
+                                        var nuevoEgreso = new Egreso
+                                        {
+                                            RegistroId = nuevoRegistro.Id,
+                                            Fecha = DateOnly.FromDateTime(fechaEgresoDt),
+                                            DomicilioRef = "" // El modelo lo requiere
+                                        };
+
+                                        _context.Egresos.Add(nuevoEgreso);
+                                    }
+
+                                    casosImportados++;
+                                }
+                                catch (Exception)
+                                {
+                                    // Si una fila entera falla por una celda irrecuperable, la contamos como fallida y SEGUIMOS con la próxima.
+                                    casosFallidos++;
+                                    continue;
+                                }
+                            }
+
+                            await _context.SaveChangesAsync();
+                            await transaction.CommitAsync();
+
+                            string msj = $"Se importaron {casosImportados} registros correctamente.";
+                            if (casosFallidos > 0) msj += $" Se omitieron {casosFallidos} filas por tener datos corruptos.";
+
+                            TempData["MensajeExito"] = msj;
+                        }
+                        catch (Exception ex)
+                        {
+                            await transaction.RollbackAsync();
+                            TempData["MensajeError"] = "Error masivo al procesar. Detalle: " + ex.Message;
+                        }
+                    }
+                }
+            }
+
+            return RedirectToAction("Index", "Home");
+        }
+
+
         [HttpGet]
         [HttpPost]
         [ValidateAntiForgeryToken]

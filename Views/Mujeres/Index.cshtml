@@ -1,4 +1,5 @@
 ﻿@model IEnumerable<TPI_GESTION_HOGAR.Models.Mujer>
+
 @if (TempData["MensajeExito"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show shadow-sm fw-bold mt-3" role="alert">
@@ -21,8 +22,6 @@
     </div>
     <div class="col-md-9">
         <form asp-action="Index" method="get" class="d-flex justify-content-end">
-            
-           
             <select name="estadoFiltro" class="form-select w-auto me-2 shadow-sm text-secondary fw-bold">
                 @if (ViewData["EstadoFiltro"]?.ToString() == "activas")
                 {
@@ -64,7 +63,7 @@
                         <th>Apellido</th>
                         <th>Nombre</th>
                         <th>Edad</th>
-                        <th class="text-center">Estado</th> 
+                        <th class="text-center">Estado</th>
                         <th class="text-center">Acciones</th>
                     </tr>
                 </thead>
@@ -78,7 +77,6 @@
                                 <td class="fw-bold">@mujer.Apellido</td>
                                 <td>@mujer.Nombre</td>
                                 <td>@mujer.Edad años</td>
-                                
 
                                 <td class="text-center">
                                     @if (mujer.Estado == true)
@@ -116,3 +114,77 @@
         </div>
     </div>
 </div>
+
+<!-- Controles de Paginación -->
+<!-- Controles de Paginación -->
+@if (ViewBag.TotalPages > 1)
+{
+    // Lógica de Ventana Móvil (Mostrar máximo 5 botones de página a la vez)
+    int totalPages = ViewBag.TotalPages;
+    int currentPage = ViewBag.CurrentPage;
+
+    int startPage = Math.Max(1, currentPage - 2);
+    int endPage = Math.Min(totalPages, currentPage + 2);
+
+    // Ajuste de los extremos para mostrar siempre 5 botones si hay suficientes páginas
+    if (currentPage <= 3) { endPage = Math.Min(totalPages, 5); }
+    if (currentPage >= totalPages - 2) { startPage = Math.Max(1, totalPages - 4); }
+
+    <div class="d-flex justify-content-center mt-4 mb-5">
+        <ul class="pagination shadow-sm flex-wrap">
+
+            <!-- Botón Primera Página -->
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <a class="page-link text-primary" asp-action="Index"
+                   asp-route-pageNumber="1"
+                   asp-route-buscarTexto="@ViewData["FiltroTexto"]"
+                   asp-route-estadoFiltro="@ViewData["EstadoFiltro"]" title="Primera página">
+                    <i class="bi bi-chevron-double-left"></i>
+                </a>
+            </li>
+
+            <!-- Botón Anterior -->
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <a class="page-link text-primary fw-bold" asp-action="Index"
+                   asp-route-pageNumber="@(currentPage - 1)"
+                   asp-route-buscarTexto="@ViewData["FiltroTexto"]"
+                   asp-route-estadoFiltro="@ViewData["EstadoFiltro"]">
+                    <i class="bi bi-chevron-left"></i> Ant
+                </a>
+            </li>
+
+            <!-- Números de Página (Dinámicos) -->
+            @for (int i = startPage; i <= endPage; i++)
+            {
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <a class="page-link" asp-action="Index"
+                       asp-route-pageNumber="@i"
+                       asp-route-buscarTexto="@ViewData["FiltroTexto"]"
+                       asp-route-estadoFiltro="@ViewData["EstadoFiltro"]">@i</a>
+                </li>
+            }
+
+            <!-- Botón Siguiente -->
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <a class="page-link text-primary fw-bold" asp-action="Index"
+                   asp-route-pageNumber="@(currentPage + 1)"
+                   asp-route-buscarTexto="@ViewData["FiltroTexto"]"
+                   asp-route-estadoFiltro="@ViewData["EstadoFiltro"]">
+                    Sig <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+
+            <!-- Botón Última Página -->
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <a class="page-link text-primary" asp-action="Index"
+                   asp-route-pageNumber="@totalPages"
+                   asp-route-buscarTexto="@ViewData["FiltroTexto"]"
+                   asp-route-estadoFiltro="@ViewData["EstadoFiltro"]" title="Última página">
+                    <i class="bi bi-chevron-double-right"></i>
+                </a>
+            </li>
+
+        </ul>
+    </div>
+}
+}
